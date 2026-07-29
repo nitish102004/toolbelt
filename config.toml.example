@@ -1,0 +1,45 @@
+# ~/.toolbelt/config.toml -- per-user toolbelt configuration.
+#
+# Copy this file to your <SECRETS_DIR> (default: %USERPROFILE%\.toolbelt on
+# Windows, ~/.toolbelt elsewhere) and edit the values you care about.
+# Anything you leave commented out uses the built-in default.
+#
+# Per-value precedence at runtime:
+#   1. Tool-specific environment variable (e.g. TOOLBELT_JIRA_URL)
+#   2. Value from this file
+#   3. Built-in default (the value shown in the comment below)
+#
+# The file is optional. If it does not exist, everything just uses the
+# built-in defaults.
+
+
+[gitlab]
+# base_url            = "https://gitlab.example.com/api/v4"
+# default_project_id  = 1                    # myorg/myproj/myrepo
+
+# env-var overrides:
+#   TOOLBELT_GITLAB_URL          -> base_url
+#   TOOLBELT_GITLAB_PROJECT_ID   -> default_project_id
+
+
+[jira]
+# base_url             = "https://jira.example.com/rest/api/2"
+# browse_url           = "https://jira.example.com/browse"
+# default_project_key  = "MYPROJ"
+
+# env-var overrides:
+#   TOOLBELT_JIRA_URL          -> base_url
+#   TOOLBELT_JIRA_BROWSE_URL   -> browse_url
+#   TOOLBELT_JIRA_PROJECT_KEY  -> default_project_key
+
+
+[conf]
+# host                = "https://confluence.example.com"
+# base_url            = "https://confluence.example.com/rest/api"
+# default_space_key   = "MYSPACE"
+
+# env-var overrides:
+#   TOOLBELT_CONF_HOST       -> host
+#   TOOLBELT_CONF_URL        -> base_url
+#   TOOLBELT_CONF_SPACE_KEY  -> default_space_key
+
