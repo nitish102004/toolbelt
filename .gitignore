@@ -29,8 +29,9 @@ env/
 .env
 .env.*
 
-# Per-machine shim overrides (see bin/env.cmd.example)
+# Per-machine shim overrides (see bin/env.cmd.example / bin/env.sh.example)
 bin/env.cmd
+bin/env.sh
 
 # Local overrides / scratch
 local.cmd

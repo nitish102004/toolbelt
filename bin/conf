@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# conf -- macOS/Linux wrapper for the Confluence tool.
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${BIN_DIR}/env.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${BIN_DIR}/env.sh"
+fi
+
+export PYTHONPATH="${BIN_DIR}/../src:${PYTHONPATH:-}"
+PYTHON="${TOOLBELT_PYTHON:-python3}"
+
+if [[ -n "${TOOLBELT_PYTHON:-}" && ! -x "${TOOLBELT_PYTHON}" ]]; then
+  echo "[toolbelt] TOOLBELT_PYTHON points to a file that does not exist: ${TOOLBELT_PYTHON}" >&2
+  exit 2
+fi
+
+exec "${PYTHON}" -m conf "$@"

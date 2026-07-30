@@ -66,6 +66,25 @@ def get(path: str, params: dict | None = None) -> Any:
     return _request("GET", path, params=params)
 
 
+def get_all(path: str, params: dict | None = None, *, per_page: int = 100) -> list[Any]:
+    """Paginate a list endpoint until all pages are fetched."""
+    base = dict(params or {})
+    base.setdefault("per_page", per_page)
+    results: list[Any] = []
+    page = 1
+    while True:
+        batch = get(path, {**base, "page": page})
+        if not batch:
+            break
+        if not isinstance(batch, list):
+            sys.exit(f"[gitlab] expected list from GET {path}, got {type(batch).__name__}")
+        results.extend(batch)
+        if len(batch) < per_page:
+            break
+        page += 1
+    return results
+
+
 def post(path: str, json_body: dict | None = None) -> Any:
     return _request("POST", path, json_body=json_body or {})
 

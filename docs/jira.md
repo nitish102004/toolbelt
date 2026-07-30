@@ -25,6 +25,19 @@ jira me
 Rotate the token in the Jira UI (Profile -> Personal Access Tokens) and
 overwrite the file. Nothing else changes.
 
+**Jira Cloud (Atlassian):** store `email@company.com:API_TOKEN` in
+`jira.token` (one line). The tool detects the `:` and uses Basic auth
+automatically. Jira Server / Data Center PATs stay as a plain token (Bearer).
+
+```
+# Jira Cloud
+<nul set /p="you@example.com:ATATT..." > "%USERPROFILE%\.toolbelt\jira.token"
+
+# macOS / Linux
+printf '%s' 'you@example.com:ATATT...' > ~/.toolbelt/jira.token
+chmod 600 ~/.toolbelt/jira.token
+```
+
 ## Verb reference
 
 ### Identity
