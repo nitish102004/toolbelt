@@ -6,6 +6,7 @@ file stays a mechanical HTTP layer.
 """
 from __future__ import annotations
 
+import base64
 import json
 import sys
 import urllib.error
@@ -33,6 +34,11 @@ def _auth_header() -> dict[str, str]:
     global _token
     if _token is None:
         _token = load_secret("jira.token")
+    # Jira Cloud: store "email@company.com:API_TOKEN" in jira.token (Basic auth).
+    # Jira Server / Data Center: store the PAT alone (Bearer auth).
+    if ":" in _token:
+        encoded = base64.b64encode(_token.encode()).decode("ascii")
+        return {"Authorization": f"Basic {encoded}"}
     return {"Authorization": f"Bearer {_token}"}
 
 

@@ -145,3 +145,28 @@ Delete the clone, remove `bin\` from `PATH`, delete
 | `HTTP 401` on `me` | Expired / mistyped token | regenerate PAT in the source system, overwrite the file |
 | `HTTP 403` on some verbs | PAT lacks required scope, or you lack access to that resource | fix at the source system |
 
+## macOS / Linux
+
+The repo ships both Windows (`.cmd`) and Unix (shell) shims in `bin/`.
+
+```bash
+git clone https://github.com/TheShahnawaaz/toolbelt.git ~/toolbelt
+export PATH="$HOME/toolbelt/bin:$PATH"    # add to ~/.zshrc or ~/.bashrc
+
+# optional per-machine overrides (see bin/env.sh.example)
+cp ~/toolbelt/bin/env.sh.example ~/toolbelt/bin/env.sh
+
+mkdir -p ~/.toolbelt
+printf '%s' '<your-gitlab-PAT>' > ~/.toolbelt/gitlab.token
+chmod 600 ~/.toolbelt/gitlab.token
+
+gl me
+```
+
+If Python's SSL verification fails against a corporate GitLab host, set
+`SSL_CERT_FILE` in `bin/env.sh` (see `bin/env.sh.example`).
+
+**oh-my-zsh users:** the git plugin aliases `gl` to `git pull`. Add
+`unalias gl 2>/dev/null` after your `PATH` export, or call the shim by
+full path.
+

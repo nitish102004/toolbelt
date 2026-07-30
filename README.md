@@ -47,9 +47,14 @@ Every verb self-documents via `<tool> help <verb>`.
 ```
 gl me                                  who am I?
 gl mr list                             my open MRs
+gl mr list --global                    my open MRs across all GitLab projects
 gl mr status 1                    state + head pipeline
 gl mr diff 1 --stat               per-file +/- summary
 gl mr diff 1 User.java            diff of matching files only
+gl mr review 1                    status + pipeline + review comments report
+gl mr comments 1 --unresolved     list unresolved review threads only
+gl mr comment-reply 1 abc12345 "fixed in latest push"
+gl mr comment-resolve 1 abc12345   resolve a review thread
 gl mr pipeline 1                  job breakdown of latest pipeline
 gl mr create --push --target main      create MR from current branch
 gl job log 44444444 --tail 40        tail a failed job's trace

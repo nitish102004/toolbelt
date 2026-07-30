@@ -53,16 +53,18 @@ alice  (Alice User)  <alice@example.com>  id=1
 
 ## Merge requests -- read
 
-### `gl mr list [--all] [--state opened|merged|closed]`
-Default: **your open MRs**, most recently updated first (up to 30). `--all`
-drops the author filter; `--state` picks a different state.
+### `gl mr list [--all] [--global] [--state opened|merged|closed]`
+Default: **your open MRs** in the configured default project, most recently
+updated first (up to 30). `--all` drops the author filter; `--global` lists
+MRs across every GitLab project you can access (still filtered to your MRs
+unless `--all` is also given); `--state` picks a different state.
 
 ```
-> gl mr list
-iid     state   branch                            title
-------  ------  --------------------------------  --------------------------------------------------
-1  opened  alice/remove-eve              Remove eve identity and all references
-2  opened  alice/add-developer-identity-v2  Add alice developer identity to ctl_core_non_prod_
+> gl mr list --global
+iid   project                         state   branch              title
+----  ------------------------------  ------  ------------------  -----
+1320  lk-juno/services/juno-customer  opened  isArchived/logs     add logs for archieved file
+66    lk-pos/services/nexora          opened  fix-v3-apis         fix for v3 apis
 ```
 
 ### `gl mr status <iid>`
@@ -194,6 +196,46 @@ argument is joined with spaces.
 > gl mr note 1 "waiting for source-cleaner-projector-users to merge first"
 posted note id=87340221
 ```
+
+### `gl mr comments <iid> [--human] [--unresolved] [--system]`
+List discussion comments on an MR. By default shows all non-system notes;
+flags narrow the output.
+
+| Flag            | Effect                                              |
+| --------------- | --------------------------------------------------- |
+| `--human`       | skip system notes and `codereview` bot posts        |
+| `--unresolved`  | only unresolved inline review threads               |
+| `--system`      | include system notes (commit pushes, line changes)  |
+
+Discussion ids are printed as an 8-char prefix you can pass to the reply /
+resolve verbs.
+
+### `gl mr review <iid>`
+Combined MR report: state, pipeline, approvals, description, unresolved
+human review comments, and the full human comment thread. This is the
+one-shot verb for triaging review feedback.
+
+```
+> gl mr review 1320
+MR !1320: add logs for archieved file
+  state       : opened  (draft=False)
+  ...
+  comments    : 3 human, 2 unresolved, 17 thread(s)
+
+--- unresolved review comments ---
+1. shikharyadav @ CustomerProfileServiceImpl.java:543  (disc=7b1f2554)
+   remove
+```
+
+### `gl mr comment-reply <iid> <discussion-id> "<message>"`
+Reply inside an existing discussion thread. `<discussion-id>` can be the
+full UUID or an 8-character prefix shown by `gl mr comments`.
+
+### `gl mr comment-resolve <iid> <discussion-id>`
+Mark a review thread as resolved.
+
+### `gl mr comment-unresolve <iid> <discussion-id>`
+Reopen a previously resolved review thread.
 
 ### `gl mr approve <iid>`
 Add your approval. Prints how many approvals are still required.

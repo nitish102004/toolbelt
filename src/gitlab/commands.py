@@ -110,20 +110,36 @@ def cmd_mr_pipeline(args: list[str]) -> None:
 
 
 def cmd_mr_list(args: list[str]) -> None:
-    """gl mr list [--mine|--all] [--state opened|merged|closed]  -- list MRs."""
+    """gl mr list [--mine|--all] [--global] [--state opened|merged|closed]  -- list MRs."""
     state = _flag(args, "--state", "opened")
-    params = {"state": state, "per_page": 30, "order_by": "updated_at"}
+    params: dict = {"state": state, "per_page": 30, "order_by": "updated_at"}
     if not _has_flag(args, "--all"):
         me = api.get("/user")
         params["author_id"] = me["id"]
-    mrs = api.get(f"{api.project_path()}/merge_requests", params)
+    if _has_flag(args, "--global"):
+        params["scope"] = "all"
+        path = "/merge_requests"
+        columns = ["iid", "project", "state", "branch", "title"]
+    else:
+        path = f"{api.project_path()}/merge_requests"
+        columns = ["iid", "state", "branch", "title"]
+    mrs = api.get(path, params)
     if not mrs:
         print("(no MRs)")
         return
-    _print_table(
-        [{"iid": m["iid"], "state": m["state"], "branch": m["source_branch"], "title": m["title"][:60]} for m in mrs],
-        ["iid", "state", "branch", "title"],
-    )
+    rows = []
+    for m in mrs:
+        row = {
+            "iid": m["iid"],
+            "state": m["state"],
+            "branch": m["source_branch"],
+            "title": m["title"][:60],
+        }
+        if _has_flag(args, "--global"):
+            refs = m.get("references", {}).get("full", "")
+            row["project"] = refs.rsplit("!", 1)[0] if "!" in refs else str(m.get("project_id", "?"))
+        rows.append(row)
+    _print_table(rows, columns)
 
 
 def cmd_mr_changes(args: list[str]) -> None:
@@ -263,6 +279,213 @@ def cmd_mr_note(args: list[str]) -> None:
     iid, msg = args[0], " ".join(args[1:])
     r = api.post(f"{api.project_path()}/merge_requests/{iid}/notes", {"body": msg})
     print(f"posted note id={r['id']}")
+
+
+def _mr_discussions(iid: str) -> list[dict]:
+    return api.get_all(
+        f"{api.project_path()}/merge_requests/{iid}/discussions",
+        {"per_page": 100},
+    )
+
+
+def _discussion_id(discussions: list[dict], token: str) -> str:
+    """Resolve a full or prefix discussion id."""
+    token = token.lower()
+    for d in discussions:
+        did = d["id"]
+        if did == token or did.lower().startswith(token):
+            return did
+    sys.exit(f"[gl] discussion not found: {token!r}")
+
+
+def _fmt_ts(value: str | None) -> str:
+    if not value:
+        return ""
+    return value.replace("T", " ")[:19]
+
+
+def _strip_html(text: str) -> str:
+    import re
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.I)
+    text = re.sub(r"</p>", "\n", text, flags=re.I)
+    text = re.sub(r"</li>", "\n", text, flags=re.I)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = text.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+    lines = [ln.rstrip() for ln in text.splitlines()]
+    return "\n".join(ln for ln in lines if ln.strip())
+
+
+def _note_location(note: dict) -> str:
+    pos = note.get("position") or {}
+    path = pos.get("new_path") or pos.get("old_path") or ""
+    line = pos.get("new_line") or pos.get("old_line") or ""
+    if path:
+        return f"{path}:{line}" if line else path
+    return ""
+
+
+def _print_note(note: dict, *, discussion_id: str | None = None, resolved: bool = False,
+                indent: str = "  ") -> None:
+    author = note.get("author", {}).get("username", "?")
+    created = _fmt_ts(note.get("created_at"))
+    flags: list[str] = []
+    if note.get("system"):
+        flags.append("system")
+    if note.get("resolvable"):
+        flags.append("resolved" if (note.get("resolved") or resolved) else "unresolved")
+    loc = _note_location(note)
+    if loc:
+        flags.append(f"@{loc}")
+    flag_s = f" [{', '.join(flags)}]" if flags else ""
+    did = f" disc={discussion_id[:8]}" if discussion_id else ""
+    print(f"{indent}{author} — {created}{flag_s}{did}")
+    body = _strip_html((note.get("body") or "").strip())
+    if body:
+        for line in body.splitlines():
+            print(f"{indent}  {line}")
+    else:
+        print(f"{indent}  (empty)")
+
+
+def cmd_mr_comments(args: list[str]) -> None:
+    """gl mr comments <iid> [--human] [--unresolved] [--system]  -- list MR discussion comments."""
+    if not args or args[0].startswith("--"):
+        sys.exit("usage: gl mr comments <iid> [--human] [--unresolved] [--system]")
+    iid = args[0]
+    human_only = _has_flag(args, "--human")
+    unresolved_only = _has_flag(args, "--unresolved")
+    include_system = _has_flag(args, "--system")
+
+    mr = api.get(f"{api.project_path()}/merge_requests/{iid}")
+    discussions = _mr_discussions(iid)
+    print(f"MR !{mr['iid']}: {mr['title']}")
+    print(f"  url: {mr['web_url']}")
+
+    shown = 0
+    for d in discussions:
+        notes = d.get("notes", [])
+        if not notes:
+            continue
+        printable = []
+        for n in notes:
+            if human_only and (n.get("system") or n.get("author", {}).get("username") in ("codereview",)):
+                continue
+            if not include_system and n.get("system"):
+                continue
+            if unresolved_only:
+                if not (n.get("resolvable") and not n.get("resolved") and not d.get("resolved")):
+                    continue
+            printable.append(n)
+        if not printable:
+            continue
+        shown += 1
+        print(f"\n--- discussion {d['id'][:8]} ---")
+        for n in printable:
+            _print_note(n, discussion_id=d["id"], resolved=bool(d.get("resolved")))
+
+    if shown == 0:
+        print("\n(no matching comments)")
+
+
+def cmd_mr_review(args: list[str]) -> None:
+    """gl mr review <iid>  -- MR report: status, pipeline, approvals, and review comments."""
+    if not args:
+        sys.exit("usage: gl mr review <iid>")
+    iid = args[0]
+    mr = api.get(f"{api.project_path()}/merge_requests/{iid}")
+    discussions = _mr_discussions(iid)
+
+    print(f"MR !{mr['iid']}: {mr['title']}")
+    print(f"  state       : {mr['state']}  (draft={mr.get('draft', False)})")
+    print(f"  author      : {mr['author']['username']}")
+    print(f"  source      : {mr['source_branch']} -> {mr['target_branch']}")
+    print(f"  url         : {mr['web_url']}")
+    if mr.get("head_pipeline"):
+        p = mr["head_pipeline"]
+        print(f"  pipeline    : #{p['id']}  status={p['status']}")
+    try:
+        ap = api.get(f"{api.project_path()}/merge_requests/{iid}/approvals")
+        approvers = [a["user"]["username"] for a in ap.get("approved_by", [])]
+        print(f"  approvals   : {ap.get('approvals_left', '?')} left; approved by: {', '.join(approvers) or '-'}")
+    except SystemExit:
+        pass
+
+    human: list[tuple[dict, dict]] = []
+    unresolved: list[tuple[dict, dict]] = []
+    for d in discussions:
+        for n in d.get("notes", []):
+            if n.get("system"):
+                continue
+            if n.get("author", {}).get("username") == "codereview":
+                continue
+            human.append((d, n))
+            if n.get("resolvable") and not n.get("resolved") and not d.get("resolved"):
+                unresolved.append((d, n))
+
+    print(f"  comments    : {len(human)} human, {len(unresolved)} unresolved, {len(discussions)} thread(s)")
+
+    desc = (mr.get("description") or "").strip()
+    if desc:
+        print("\n--- description ---")
+        print(_strip_html(desc))
+
+    if unresolved:
+        print("\n--- unresolved review comments ---")
+        for i, (d, n) in enumerate(unresolved, 1):
+            loc = _note_location(n)
+            loc_s = f" @ {loc}" if loc else ""
+            print(f"\n{i}. {n['author']['username']}{loc_s}  (disc={d['id'][:8]})")
+            body = _strip_html((n.get("body") or "").strip())
+            for line in body.splitlines():
+                print(f"   {line}")
+
+    if human:
+        print("\n--- all human comments ---")
+        for d, n in human:
+            _print_note(n, discussion_id=d["id"], resolved=bool(d.get("resolved")))
+            print()
+
+
+def cmd_mr_comment_reply(args: list[str]) -> None:
+    """gl mr comment-reply <iid> <discussion-id> "<message>"  -- reply in a discussion thread."""
+    if len(args) < 3:
+        sys.exit('usage: gl mr comment-reply <iid> <discussion-id> "<message>"')
+    iid, disc_token, msg = args[0], args[1], " ".join(args[2:])
+    discussions = _mr_discussions(iid)
+    disc_id = _discussion_id(discussions, disc_token)
+    r = api.post(
+        f"{api.project_path()}/merge_requests/{iid}/discussions/{disc_id}/notes",
+        {"body": msg},
+    )
+    print(f"posted reply note id={r['id']} in discussion {disc_id[:8]}")
+
+
+def cmd_mr_comment_resolve(args: list[str]) -> None:
+    """gl mr comment-resolve <iid> <discussion-id>  -- resolve a review thread."""
+    if len(args) < 2:
+        sys.exit("usage: gl mr comment-resolve <iid> <discussion-id>")
+    iid, disc_token = args[0], args[1]
+    discussions = _mr_discussions(iid)
+    disc_id = _discussion_id(discussions, disc_token)
+    api.put(
+        f"{api.project_path()}/merge_requests/{iid}/discussions/{disc_id}",
+        {"resolved": True},
+    )
+    print(f"resolved discussion {disc_id[:8]}")
+
+
+def cmd_mr_comment_unresolve(args: list[str]) -> None:
+    """gl mr comment-unresolve <iid> <discussion-id>  -- reopen a resolved thread."""
+    if len(args) < 2:
+        sys.exit("usage: gl mr comment-unresolve <iid> <discussion-id>")
+    iid, disc_token = args[0], args[1]
+    discussions = _mr_discussions(iid)
+    disc_id = _discussion_id(discussions, disc_token)
+    api.put(
+        f"{api.project_path()}/merge_requests/{iid}/discussions/{disc_id}",
+        {"resolved": False},
+    )
+    print(f"unresolved discussion {disc_id[:8]}")
 
 
 def cmd_mr_approve(args: list[str]) -> None:
@@ -644,6 +867,11 @@ VERBS = {
     # MR write
     "mr-create": cmd_mr_create,
     "mr-note": cmd_mr_note,
+    "mr-comments": cmd_mr_comments,
+    "mr-review": cmd_mr_review,
+    "mr-comment-reply": cmd_mr_comment_reply,
+    "mr-comment-resolve": cmd_mr_comment_resolve,
+    "mr-comment-unresolve": cmd_mr_comment_unresolve,
     "mr-approve": cmd_mr_approve,
     "mr-merge": cmd_mr_merge,
     "mr-rebase": cmd_mr_rebase,
