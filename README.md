@@ -39,6 +39,7 @@ Every verb self-documents via `<tool> help <verb>`.
 | `gl`   | GitLab merge requests, pipelines, jobs, diffs   | [`docs/gitlab.md`](docs/gitlab.md)       |
 | `jira` | Jira Server issues, comments, transitions, JQL  | [`docs/jira.md`](docs/jira.md)           |
 | `conf` | Confluence pages, attachments, CQL search       | [`docs/confluence.md`](docs/confluence.md) |
+| `soz`  | SignOz logs/traces/metrics API (auto-login)       | [`docs/signoz.md`](docs/signoz.md)       |
 
 ## Cheat sheets
 
@@ -99,6 +100,26 @@ conf search "space = MYSPACE AND title ~ Onboarding"
 conf space view MYSPACE
 ```
 
+### SignOz -- daily verbs
+
+```
+soz auth status                         credential + session expiry
+soz auth login                          force login, cache JWT
+soz me                                  who am I?
+soz logs tail --service my-api --since 15m
+soz logs search "error" --service checkout --since 1h
+soz logs errors --since 30m
+soz logs trace <traceId> --since 6h
+soz traces search --service my-api --since 1h
+soz traces view <traceId>
+soz metrics query signoz_calls_total --since 6h
+soz rule list
+soz alert list
+soz dashboard list
+soz api GET  /api/v1/rules              raw REST call
+soz api POST /api/v3/query_range --file query.json
+```
+
 ## Documentation
 
 * [`INSTALL.md`](INSTALL.md) -- fresh-machine setup and troubleshooting.
@@ -109,7 +130,8 @@ conf space view MYSPACE
 * [`docs/ADDING_A_TOOL.md`](docs/ADDING_A_TOOL.md) -- copy-paste recipe
   for a new tool.
 * [`docs/gitlab.md`](docs/gitlab.md) / [`docs/jira.md`](docs/jira.md) /
-  [`docs/confluence.md`](docs/confluence.md) -- full per-tool references.
+  [`docs/confluence.md`](docs/confluence.md) / [`docs/signoz.md`](docs/signoz.md)
+  -- full per-tool references.
 * [`LICENSE.md`](LICENSE.md) -- ownership + contribution rules.
 
 ## Runtime

@@ -24,6 +24,8 @@ env/
 .toolbelt/
 *.token
 *.pat
+signoz.credentials
+signoz.session
 *.pem
 *.key
 .env

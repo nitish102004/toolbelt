@@ -88,7 +88,12 @@ mkdir "%USERPROFILE%\.toolbelt"  2>nul
 <nul set /p="<your-jira-PAT>"      > "%USERPROFILE%\.toolbelt\jira.token"
 <nul set /p="<your-confluence-PAT>"> "%USERPROFILE%\.toolbelt\confluence.token"
 
+rem SignOz: JSON credentials file (email + password), not a one-line token
+notepad "%USERPROFILE%\.toolbelt\signoz.credentials"
+rem paste: {"email":"you@example.com","password":"..."}
+
 icacls "%USERPROFILE%\.toolbelt\*.token" /inheritance:r /grant:r "%USERNAME%":F
+icacls "%USERPROFILE%\.toolbelt\signoz.credentials" /inheritance:r /grant:r "%USERNAME%":F
 ```
 
 The `icacls` line restricts the files to your account only. The
@@ -101,6 +106,8 @@ Bearer tokens).
 gl me
 jira me
 conf me
+soz auth login
+soz me
 ```
 
 Each should print your username. Done.

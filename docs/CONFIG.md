@@ -88,6 +88,15 @@ That means:
 | `base_url`           | `TOOLBELT_CONF_URL`             | derived from `host`  (`<host>/rest/api`)        |
 | `default_space_key`  | `TOOLBELT_CONF_SPACE_KEY`       | `MYSPACE`                                          |
 
+### `[signoz]`
+
+| Key        | Env override           | Built-in default                    |
+|------------|------------------------|-------------------------------------|
+| `base_url` | `TOOLBELT_SIGNOZ_URL`  | `https://signoz.example.com`        |
+
+Credentials live in `~/.toolbelt/signoz.credentials` (not in config). See
+[`docs/signoz.md`](signoz.md).
+
 ## Things NOT in the config file
 
 These stay as environment variables by design:
@@ -101,7 +110,7 @@ These stay as environment variables by design:
 ## Rotating / editing the config
 
 The file is read once per Python-process launch, so any change takes
-effect on the next `gl` / `jira` / `conf` invocation. There is nothing to
+effect on the next `gl` / `jira` / `conf` / `soz` invocation. There is nothing to
 restart.
 
 ## Troubleshooting

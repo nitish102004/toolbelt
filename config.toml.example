@@ -43,3 +43,15 @@
 #   TOOLBELT_CONF_URL        -> base_url
 #   TOOLBELT_CONF_SPACE_KEY  -> default_space_key
 
+
+[signoz]
+# base_url            = "https://signoz.example.com"
+
+# env-var overrides:
+#   TOOLBELT_SIGNOZ_URL    -> base_url
+#
+# Credentials (not in this file — see docs/signoz.md):
+#   ~/.toolbelt/signoz.credentials   {"email":"...","password":"..."}
+#   ~/.toolbelt/signoz.session       auto-managed after login
+#   ~/.toolbelt/signoz.token         optional API key / manual JWT
+
