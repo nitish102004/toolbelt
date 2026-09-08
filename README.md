@@ -39,7 +39,8 @@ Every verb self-documents via `<tool> help <verb>`.
 | `gl`   | GitLab merge requests, pipelines, jobs, diffs   | [`docs/gitlab.md`](docs/gitlab.md)       |
 | `jira` | Jira Server issues, comments, transitions, JQL  | [`docs/jira.md`](docs/jira.md)           |
 | `conf` | Confluence pages, attachments, CQL search       | [`docs/confluence.md`](docs/confluence.md) |
-| `soz`  | SignOz logs/traces/metrics API (auto-login)       | [`docs/signoz.md`](docs/signoz.md)       |
+| `soz`  | SignOz logs/traces/metrics API — prod (`logs.juno.lenskart.com`) | [`docs/signoz.md`](docs/signoz.md) |
+| `sozp` | SignOz CLI — preprod (`logs.preprod.lenskart.com`); same verbs as `soz` | [`docs/signoz.md`](docs/signoz.md) |
 
 ## Cheat sheets
 
@@ -106,11 +107,11 @@ conf space view MYSPACE
 soz auth status                         credential + session expiry
 soz auth login                          force login, cache JWT
 soz me                                  who am I?
-soz logs tail --service my-api --since 15m
-soz logs search "error" --service checkout --since 1h
+soz logs tail --service juno-cart --since 15m
+soz logs search "customerId" --service juno-ds-personalize --since 1h
 soz logs errors --since 30m
 soz logs trace <traceId> --since 6h
-soz traces search --service my-api --since 1h
+soz traces search --service puno-webservice --since 1h
 soz traces view <traceId>
 soz metrics query signoz_calls_total --since 6h
 soz rule list

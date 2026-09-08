@@ -10,8 +10,6 @@ from typing import Any
 
 from . import auth
 
-BASE_URL = auth.BASE_URL
-
 
 def _request(
     method: str,
@@ -22,7 +20,7 @@ def _request(
     headers: dict[str, str] | None = None,
     _retried: bool = False,
 ) -> Any:
-    url = f"{BASE_URL}{path}"
+    url = f"{auth.get_base_url()}{path}"
     if params:
         url += ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
 

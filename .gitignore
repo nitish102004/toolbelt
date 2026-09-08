@@ -26,6 +26,7 @@ env/
 *.pat
 signoz.credentials
 signoz.session
+signoz.preprod.session
 *.pem
 *.key
 .env

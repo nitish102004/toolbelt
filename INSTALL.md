@@ -90,7 +90,7 @@ mkdir "%USERPROFILE%\.toolbelt"  2>nul
 
 rem SignOz: JSON credentials file (email + password), not a one-line token
 notepad "%USERPROFILE%\.toolbelt\signoz.credentials"
-rem paste: {"email":"you@example.com","password":"..."}
+rem paste: {"email":"you@lenskart.com","password":"..."}
 
 icacls "%USERPROFILE%\.toolbelt\*.token" /inheritance:r /grant:r "%USERNAME%":F
 icacls "%USERPROFILE%\.toolbelt\signoz.credentials" /inheritance:r /grant:r "%USERNAME%":F

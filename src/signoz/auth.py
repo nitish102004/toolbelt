@@ -2,14 +2,19 @@
 
 Secrets live under ``<SECRETS_DIR>/`` (see ``common.secrets``):
 
-* ``signoz.credentials`` — JSON ``{"email": "...", "password": "..."}``
-* ``signoz.session``     — cached tokens written after login (auto-managed)
+* ``signoz.credentials`` — JSON ``{"email": "...", "password": "..."}`` (shared)
+* ``signoz.session``     — prod cached tokens (auto-managed)
+* ``signoz.preprod.session`` — preprod cached tokens (auto-managed)
 * ``signoz.token``       — optional static API key or manual JWT override
 
 When ``signoz.token`` exists it wins over the session cache. Otherwise the
 client reuses ``accessJwt`` until ``accessJwtExpiry``, then re-logins via
 ``POST /api/v1/login``. Newer SignOz builds may also rotate via
 ``POST /api/v2/sessions/rotate`` when a refresh token is present.
+
+Use ``--env preprod`` or ``TOOLBELT_SIGNOZ_ENV=preprod`` (or the ``sozp`` wrapper)
+to target ``logs.preprod.lenskart.com``. Default env is prod
+(``logs.juno.lenskart.com``).
 """
 from __future__ import annotations
 
@@ -26,18 +31,60 @@ from typing import Any
 from common import config as _cfg
 from common.secrets import SECRETS_DIR
 
-BASE_URL = _cfg.get(
-    "signoz",
-    "base_url",
-    "https://signoz.example.com",
-    env="TOOLBELT_SIGNOZ_URL",
-)
+PROD_DEFAULT_URL = "https://logs.juno.lenskart.com"
+PREPROD_DEFAULT_URL = "https://logs.preprod.lenskart.com"
+
+ENVIRONMENTS: dict[str, dict[str, str]] = {
+    "prod": {
+        "default_url": PROD_DEFAULT_URL,
+        "session": "signoz.session",
+        "config_section": "signoz",
+        "env_url": "TOOLBELT_SIGNOZ_URL",
+    },
+    "preprod": {
+        "default_url": PREPROD_DEFAULT_URL,
+        "session": "signoz.preprod.session",
+        "config_section": "signoz_preprod",
+        "env_url": "TOOLBELT_SIGNOZ_PREPROD_URL",
+    },
+}
 
 CREDENTIALS_NAME = "signoz.credentials"
-SESSION_NAME = "signoz.session"
 TOKEN_NAME = "signoz.token"
 
 _ACCESS_SKEW_SEC = 60
+
+_current_env = os.environ.get("TOOLBELT_SIGNOZ_ENV", "prod").strip().lower()
+if _current_env not in ENVIRONMENTS:
+    _current_env = "prod"
+
+
+def set_env(name: str) -> None:
+    """Switch active SignOz instance (prod or preprod)."""
+    global _current_env
+    env = name.strip().lower()
+    if env not in ENVIRONMENTS:
+        known = ", ".join(sorted(ENVIRONMENTS))
+        sys.exit(f"[signoz] unknown env {name!r}; use one of: {known}")
+    _current_env = env
+
+
+def get_env() -> str:
+    return _current_env
+
+
+def get_base_url() -> str:
+    meta = ENVIRONMENTS[_current_env]
+    return _cfg.get(
+        meta["config_section"],
+        "base_url",
+        meta["default_url"],
+        env=meta["env_url"],
+    )
+
+
+def _session_name() -> str:
+    return ENVIRONMENTS[_current_env]["session"]
 
 
 def _path(name: str) -> Path:
@@ -89,15 +136,15 @@ def load_credentials() -> dict[str, str]:
 
 
 def load_session() -> dict[str, Any] | None:
-    return _read_json(_path(SESSION_NAME))
+    return _read_json(_path(_session_name()))
 
 
 def save_session(data: dict[str, Any]) -> None:
-    _write_json(_path(SESSION_NAME), data)
+    _write_json(_path(_session_name()), data)
 
 
 def clear_session() -> None:
-    path = _path(SESSION_NAME)
+    path = _path(_session_name())
     if path.exists():
         path.unlink()
 
@@ -142,7 +189,7 @@ def _auth_headers(token: str) -> dict[str, str]:
 
 
 def _post_json(path: str, body: dict[str, Any], *, headers: dict[str, str] | None = None) -> Any:
-    url = f"{BASE_URL}{path}"
+    url = f"{get_base_url()}{path}"
     hdrs = {"Content-Type": "application/json", "Accept": "application/json"}
     if headers:
         hdrs.update(headers)
@@ -234,7 +281,11 @@ def get_auth_headers(*, force: bool = False) -> dict[str, str]:
 
 
 def auth_status_lines() -> list[str]:
-    lines = [f"SignOz  {BASE_URL}"]
+    session_name = _session_name()
+    lines = [
+        f"Env     {_current_env}",
+        f"SignOz  {get_base_url()}",
+    ]
     static = load_static_token()
     if static:
         kind = "Bearer JWT" if static.startswith("eyJ") else "API key"
@@ -251,14 +302,14 @@ def auth_status_lines() -> list[str]:
 
     cred_path = _path(CREDENTIALS_NAME)
     if cred_path.exists():
-        lines.append(f"Creds   {cred_path.name}  (present)")
+        lines.append(f"Creds   {cred_path.name}  (present, shared)")
     else:
         lines.append(f"Creds   missing ({CREDENTIALS_NAME})")
 
     session = load_session()
     if session and session.get("accessJwt"):
         valid = access_token_valid(session)
-        lines.append(f"Session {SESSION_NAME}  ({'valid' if valid else 'expired'})")
+        lines.append(f"Session {session_name}  ({'valid' if valid else 'expired'})")
         claims = _jwt_claims(str(session.get("accessJwt", "")))
         if claims.get("email"):
             lines.append(f"Email   {claims['email']}")
@@ -269,5 +320,5 @@ def auth_status_lines() -> list[str]:
                 f"Expires {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(exp))}  ({remaining // 60}m left)"
             )
     else:
-        lines.append(f"Session not cached — run `soz auth login`")
+        lines.append("Session not cached — run `sozp auth login` or `soz --env preprod auth login`")
     return lines

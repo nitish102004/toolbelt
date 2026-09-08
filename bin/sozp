@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# SignOz CLI for preprod (logs.preprod.lenskart.com).
+# Same commands as `soz`; sets TOOLBELT_SIGNOZ_ENV=preprod.
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export TOOLBELT_SIGNOZ_ENV=preprod
+exec "${BIN_DIR}/soz" "$@"

@@ -1,8 +1,15 @@
-# SignOz (`soz`)
+# SignOz (`soz` / `sozp`)
 
 CLI for [SignOz](https://signoz.io/) — logs, traces, metrics, alerts, and
 dashboards. Supports automatic login from locally stored credentials and
 transparent re-login on API `401` responses.
+
+| Env | URL | CLI |
+|-----|-----|-----|
+| **prod** (default) | `logs.juno.lenskart.com` | `soz` |
+| **preprod** | `logs.preprod.lenskart.com` | `sozp` or `soz --env preprod` |
+
+Prod and preprod share `signoz.credentials` but keep separate session caches.
 
 ## Setup
 
@@ -47,8 +54,9 @@ If you have a long-lived `SIGNOZ-API-KEY` or manual JWT, put it in
 
 | File | Purpose |
 |------|---------|
-| `signoz.credentials` | Email + password JSON for `POST /api/v1/login` |
-| `signoz.session` | Cached `accessJwt`, `refreshJwt`, expiry (auto-written) |
+| `signoz.credentials` | Email + password JSON for `POST /api/v1/login` (shared prod + preprod) |
+| `signoz.session` | Prod cached `accessJwt`, `refreshJwt`, expiry (auto-written) |
+| `signoz.preprod.session` | Preprod cached session (auto-written) |
 | `signoz.token` | Optional static API key or JWT override |
 
 On each API call:
@@ -120,14 +128,21 @@ soz api POST /api/v3/query_range --file query.json
 
 ## Config
 
-Optional `[signoz]` section in `~/.toolbelt/config.toml`:
+Optional sections in `~/.toolbelt/config.toml`:
 
 ```toml
 [signoz]
-base_url = "https://signoz.example.com"
+base_url = "https://logs.juno.lenskart.com"
+
+[signoz_preprod]
+base_url = "https://logs.preprod.lenskart.com"
 ```
 
-Override with `TOOLBELT_SIGNOZ_URL`.
+Overrides:
+
+* `TOOLBELT_SIGNOZ_URL` — prod base URL
+* `TOOLBELT_SIGNOZ_PREPROD_URL` — preprod base URL
+* `TOOLBELT_SIGNOZ_ENV=preprod` — switch env (same as `sozp` or `--env preprod`)
 
 ## Security
 
