@@ -3,8 +3,9 @@
 Secrets live under ``<SECRETS_DIR>/`` (see ``common.secrets``):
 
 * ``signoz.credentials`` — JSON ``{"email": "...", "password": "..."}`` (shared)
-* ``signoz.session``     — prod cached tokens (auto-managed)
+* ``signoz.session``     — juno prod cached tokens (auto-managed)
 * ``signoz.preprod.session`` — preprod cached tokens (auto-managed)
+* ``signoz.jj.session``  — JJ/common prod cached tokens (auto-managed)
 * ``signoz.token``       — optional static API key or manual JWT override
 
 When ``signoz.token`` exists it wins over the session cache. Otherwise the
@@ -12,9 +13,9 @@ client reuses ``accessJwt`` until ``accessJwtExpiry``, then re-logins via
 ``POST /api/v1/login``. Newer SignOz builds may also rotate via
 ``POST /api/v2/sessions/rotate`` when a refresh token is present.
 
-Use ``--env preprod`` or ``TOOLBELT_SIGNOZ_ENV=preprod`` (or the ``sozp`` wrapper)
-to target ``logs.preprod.lenskart.com``. Default env is prod
-(``logs.juno.lenskart.com``).
+Use ``--env preprod|jj`` or ``TOOLBELT_SIGNOZ_ENV`` (or ``sozp`` / ``sozj``
+wrappers) to target other instances. Default env is juno prod
+(``logs.juno.lenskart.com``). JJ/common prod is ``logs-common-sgn.lenskart.com``.
 """
 from __future__ import annotations
 
@@ -33,6 +34,7 @@ from common.secrets import SECRETS_DIR
 
 PROD_DEFAULT_URL = "https://logs.juno.lenskart.com"
 PREPROD_DEFAULT_URL = "https://logs.preprod.lenskart.com"
+JJ_DEFAULT_URL = "https://logs-common-sgn.lenskart.com"
 
 ENVIRONMENTS: dict[str, dict[str, str]] = {
     "prod": {
@@ -40,12 +42,21 @@ ENVIRONMENTS: dict[str, dict[str, str]] = {
         "session": "signoz.session",
         "config_section": "signoz",
         "env_url": "TOOLBELT_SIGNOZ_URL",
+        "cli_hint": "soz auth login",
     },
     "preprod": {
         "default_url": PREPROD_DEFAULT_URL,
         "session": "signoz.preprod.session",
         "config_section": "signoz_preprod",
         "env_url": "TOOLBELT_SIGNOZ_PREPROD_URL",
+        "cli_hint": "sozp auth login",
+    },
+    "jj": {
+        "default_url": JJ_DEFAULT_URL,
+        "session": "signoz.jj.session",
+        "config_section": "signoz_jj",
+        "env_url": "TOOLBELT_SIGNOZ_JJ_URL",
+        "cli_hint": "sozj auth login",
     },
 }
 
@@ -60,7 +71,7 @@ if _current_env not in ENVIRONMENTS:
 
 
 def set_env(name: str) -> None:
-    """Switch active SignOz instance (prod or preprod)."""
+    """Switch active SignOz instance (prod, preprod, or jj)."""
     global _current_env
     env = name.strip().lower()
     if env not in ENVIRONMENTS:
@@ -320,5 +331,6 @@ def auth_status_lines() -> list[str]:
                 f"Expires {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(exp))}  ({remaining // 60}m left)"
             )
     else:
-        lines.append("Session not cached — run `sozp auth login` or `soz --env preprod auth login`")
+        hint = ENVIRONMENTS[_current_env].get("cli_hint", "soz auth login")
+        lines.append(f"Session not cached — run `{hint}` or `soz --env {_current_env} auth login`")
     return lines

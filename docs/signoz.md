@@ -1,4 +1,4 @@
-# SignOz (`soz` / `sozp`)
+# SignOz (`soz` / `sozp` / `sozj`)
 
 CLI for [SignOz](https://signoz.io/) — logs, traces, metrics, alerts, and
 dashboards. Supports automatic login from locally stored credentials and
@@ -6,10 +6,11 @@ transparent re-login on API `401` responses.
 
 | Env | URL | CLI |
 |-----|-----|-----|
-| **prod** (default) | `logs.juno.lenskart.com` | `soz` |
+| **prod** (default, juno) | `logs.juno.lenskart.com` | `soz` |
 | **preprod** | `logs.preprod.lenskart.com` | `sozp` or `soz --env preprod` |
+| **jj** (JJ/common prod) | `logs-common-sgn.lenskart.com` | `sozj` or `soz --env jj` |
 
-Prod and preprod share `signoz.credentials` but keep separate session caches.
+All envs share `signoz.credentials` but keep separate session caches.
 
 ## Setup
 
@@ -54,9 +55,10 @@ If you have a long-lived `SIGNOZ-API-KEY` or manual JWT, put it in
 
 | File | Purpose |
 |------|---------|
-| `signoz.credentials` | Email + password JSON for `POST /api/v1/login` (shared prod + preprod) |
-| `signoz.session` | Prod cached `accessJwt`, `refreshJwt`, expiry (auto-written) |
+| `signoz.credentials` | Email + password JSON for `POST /api/v1/login` (shared all envs) |
+| `signoz.session` | Juno prod cached `accessJwt`, `refreshJwt`, expiry (auto-written) |
 | `signoz.preprod.session` | Preprod cached session (auto-written) |
+| `signoz.jj.session` | JJ/common prod cached session (auto-written) |
 | `signoz.token` | Optional static API key or JWT override |
 
 On each API call:
@@ -136,15 +138,19 @@ base_url = "https://logs.juno.lenskart.com"
 
 [signoz_preprod]
 base_url = "https://logs.preprod.lenskart.com"
+
+[signoz_jj]
+base_url = "https://logs-common-sgn.lenskart.com"
 ```
 
 Overrides:
 
-* `TOOLBELT_SIGNOZ_URL` — prod base URL
+* `TOOLBELT_SIGNOZ_URL` — juno prod base URL
 * `TOOLBELT_SIGNOZ_PREPROD_URL` — preprod base URL
-* `TOOLBELT_SIGNOZ_ENV=preprod` — switch env (same as `sozp` or `--env preprod`)
+* `TOOLBELT_SIGNOZ_JJ_URL` — JJ/common prod base URL
+* `TOOLBELT_SIGNOZ_ENV=preprod|jj` — switch env (same as `sozp` / `sozj` or `--env`)
 
 ## Security
 
-* Never commit `signoz.credentials` or `signoz.session`.
+* Never commit `signoz.credentials` or session files.
 * Prefer a SignOz API key in `signoz.token` for automation when available.

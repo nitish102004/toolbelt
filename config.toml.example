@@ -48,13 +48,14 @@
 # base_url            = "https://logs.juno.lenskart.com"
 
 # env-var overrides:
-#   TOOLBELT_SIGNOZ_URL    -> base_url (prod, default)
-#   TOOLBELT_SIGNOZ_ENV    -> prod | preprod (or use `sozp` / `--env preprod`)
+#   TOOLBELT_SIGNOZ_URL    -> base_url (juno prod, default)
+#   TOOLBELT_SIGNOZ_ENV    -> prod | preprod | jj (or use `sozp` / `sozj` / `--env`)
 #
 # Credentials (not in this file — see docs/signoz.md):
 #   ~/.toolbelt/signoz.credentials        {"email":"...","password":"..."}  (shared)
-#   ~/.toolbelt/signoz.session            auto-managed after prod login
+#   ~/.toolbelt/signoz.session            auto-managed after juno prod login
 #   ~/.toolbelt/signoz.preprod.session    auto-managed after preprod login
+#   ~/.toolbelt/signoz.jj.session         auto-managed after JJ/common prod login
 #   ~/.toolbelt/signoz.token              optional API key / manual JWT
 
 [signoz_preprod]
@@ -62,4 +63,10 @@
 #
 # env-var override:
 #   TOOLBELT_SIGNOZ_PREPROD_URL -> base_url
+
+[signoz_jj]
+# base_url            = "https://logs-common-sgn.lenskart.com"
+#
+# env-var override:
+#   TOOLBELT_SIGNOZ_JJ_URL -> base_url
 

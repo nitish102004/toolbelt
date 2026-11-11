@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# SignOz CLI for JJ/common prod (logs-common-sgn.lenskart.com).
+# Same commands as `soz`; sets TOOLBELT_SIGNOZ_ENV=jj.
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export TOOLBELT_SIGNOZ_ENV=jj
+exec "${BIN_DIR}/soz" "$@"

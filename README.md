@@ -39,8 +39,9 @@ Every verb self-documents via `<tool> help <verb>`.
 | `gl`   | GitLab merge requests, pipelines, jobs, diffs   | [`docs/gitlab.md`](docs/gitlab.md)       |
 | `jira` | Jira Server issues, comments, transitions, JQL  | [`docs/jira.md`](docs/jira.md)           |
 | `conf` | Confluence pages, attachments, CQL search       | [`docs/confluence.md`](docs/confluence.md) |
-| `soz`  | SignOz logs/traces/metrics API — prod (`logs.juno.lenskart.com`) | [`docs/signoz.md`](docs/signoz.md) |
+| `soz`  | SignOz logs/traces/metrics API — juno prod (`logs.juno.lenskart.com`) | [`docs/signoz.md`](docs/signoz.md) |
 | `sozp` | SignOz CLI — preprod (`logs.preprod.lenskart.com`); same verbs as `soz` | [`docs/signoz.md`](docs/signoz.md) |
+| `sozj` | SignOz CLI — JJ/common prod (`logs-common-sgn.lenskart.com`); same verbs as `soz` | [`docs/signoz.md`](docs/signoz.md) |
 
 ## Cheat sheets
 

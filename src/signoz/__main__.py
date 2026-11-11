@@ -3,7 +3,7 @@
 Supports multi-word verbs: ``logs tail``, ``logs-tail``, ``traces view``, etc.
 
 Global flags (before verb):
-  ``--env prod|preprod``  — target prod (default) or preprod SignOz instance.
+  ``--env prod|preprod|jj``  — target juno prod (default), preprod, or JJ/common prod.
 """
 from __future__ import annotations
 

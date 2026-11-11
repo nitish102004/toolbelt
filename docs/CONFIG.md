@@ -88,13 +88,16 @@ That means:
 | `base_url`           | `TOOLBELT_CONF_URL`             | derived from `host`  (`<host>/rest/api`)        |
 | `default_space_key`  | `TOOLBELT_CONF_SPACE_KEY`       | `MYSPACE`                                          |
 
-### `[signoz]`
+### `[signoz]` / `[signoz_preprod]` / `[signoz_jj]`
 
-| Key        | Env override           | Built-in default                    |
-|------------|------------------------|-------------------------------------|
-| `base_url` | `TOOLBELT_SIGNOZ_URL`  | `https://signoz.example.com`        |
+| Section | Key | Env override | Built-in default |
+|---------|-----|--------------|------------------|
+| `[signoz]` | `base_url` | `TOOLBELT_SIGNOZ_URL` | `https://logs.juno.lenskart.com` |
+| `[signoz_preprod]` | `base_url` | `TOOLBELT_SIGNOZ_PREPROD_URL` | `https://logs.preprod.lenskart.com` |
+| `[signoz_jj]` | `base_url` | `TOOLBELT_SIGNOZ_JJ_URL` | `https://logs-common-sgn.lenskart.com` |
 
-Credentials live in `~/.toolbelt/signoz.credentials` (not in config). See
+`TOOLBELT_SIGNOZ_ENV=prod|preprod|jj` (or wrappers `soz` / `sozp` / `sozj`) selects the instance.
+Credentials live in `~/.toolbelt/signoz.credentials` (shared; not in config). See
 [`docs/signoz.md`](signoz.md).
 
 ## Things NOT in the config file
